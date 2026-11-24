@@ -110,7 +110,7 @@ export function ContactSection({
     return errors;
   };
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSubmitError('');
 
@@ -123,19 +123,35 @@ export function ContactSection({
     setFieldErrors({});
     setIsSubmitting(true);
 
+    const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const randomPart = Math.random().toString(36).slice(2, 6).toUpperCase();
+    const referenceId = `VDX-${datePart}-${randomPart}`;
+
     try {
-      const response = await fetch('/api/contact', {
+      const response = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          access_key: 'ec14ca36-e390-4e4f-bb5c-6a90036e32a1',
+          subject: `New Project Enquiry [${referenceId}] — ${form.businessName}`,
+          from_name: 'VEDNIX Website',
+          name: form.fullName,
+          email: form.email,
+          replyto: form.email,
+          phone: form.phone,
+          business_name: form.businessName,
+          service_required: form.serviceRequired,
+          reference_id: referenceId,
+          message: form.projectDescription,
+        }),
       });
 
       const payload = await response.json().catch(() => null);
 
       if (!response.ok || !payload?.success) {
-        if (payload?.errors && typeof payload.errors === 'object') {
-          setFieldErrors(payload.errors);
-        }
         setSubmitError(
           payload?.message ||
             'We could not submit your enquiry right now. Please try again.'
@@ -144,8 +160,9 @@ export function ContactSection({
       }
 
       setSubmissionSuccess({
-        referenceId: payload.referenceId,
-        message: payload.message,
+        referenceId,
+        message:
+          'Your enquiry has been received. A member of our team will respond within one business day.',
       });
       setForm({
         fullName: '',
